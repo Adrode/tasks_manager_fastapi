@@ -105,11 +105,16 @@ def tasks_post(task: TaskCreate):
   return new_task
 
 @api.get("/tasks")
-def get_tasks(status: TaskStatus | None = None, priority: TaskPriority | None = None, skip: int | None = None, limit: int | None = None):
+def get_tasks(status: TaskStatus | None = None, priority: TaskPriority | None = None, skip: int = 0, limit: int = 10):
   filtered = tasks
   if status:
-    filtered.remove(item for item in tasks if item['status'] != status)
+    filtered = [item for item in filtered if item['status'] == status]
   if priority:
-    filtered.remove(item for item in tasks if item['priority'] != priority)
+    filtered = [item for item in filtered if item['priority'] == priority]
 
-  return filtered
+  result = [] 
+  for i, item in enumerate(filtered):
+    if skip <= i and i < skip + limit:
+      result.append(item)
+
+  return result
