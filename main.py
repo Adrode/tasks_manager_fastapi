@@ -29,6 +29,10 @@ class Task(BaseModel):
   status: TaskStatus
   created_at: str
 
+class UpdateStatus(BaseModel):
+  status: TaskStatus
+  priority: TaskPriority
+
 tasks = [
   {
     "id": 1,
@@ -104,6 +108,27 @@ def tasks_post(task: TaskCreate):
   tasks.append(new_task)
   return new_task
 
+@api.put("/tasks/{id}/status")
+def put_status(id: int, update: UpdateStatus):
+  for item in tasks:
+    if item['id'] == id:
+      item['status'] = update.status
+      return item
+    
+@api.put("/tasks/{id}/priority")
+def put_priority(id: int, update: UpdateStatus):
+  for item in tasks:
+    if item['id'] == id:
+      item['priority'] = update.priority
+      return item
+
+@api.delete("/tasks/{id}")
+def delete_task(id: int):
+  for item in tasks:
+    if item['id'] == id:
+      tasks.remove(item)
+  return tasks
+
 @api.get("/tasks")
 def get_tasks(status: TaskStatus | None = None, priority: TaskPriority | None = None, skip: int = 0, limit: int = 10):
   filtered = tasks
@@ -118,3 +143,4 @@ def get_tasks(status: TaskStatus | None = None, priority: TaskPriority | None = 
       result.append(item)
 
   return result
+
