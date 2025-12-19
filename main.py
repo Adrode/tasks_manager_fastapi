@@ -130,6 +130,32 @@ def delete_task(id: int):
       tasks.remove(item)
   return tasks
 
+@api.get("/tasks/stats/by-status")
+def get_status_stats():
+  status_stats = {'todo': 0, 'in_progress': 0, 'done': 0}
+  for item in tasks:
+    if item['status'] == 'todo':
+      status_stats['todo'] += 1
+    if item['status'] == 'in_progress':
+      status_stats['in_progress'] += 1
+    if item['status'] == 'done':
+      status_stats['done'] += 1
+    
+  return status_stats
+
+@api.get("/tasks/stats/by-priority")
+def get_priority_stats():
+  priority_stats = {'low': 0, 'medium': 0, 'high': 0}
+  for item in tasks:
+    if item['priority'] == 'low':
+      priority_stats['low'] += 1
+    if item['priority'] == 'medium':
+      priority_stats['medium'] += 1
+    if item['priority'] == 'high':
+      priority_stats['high'] += 1
+    
+  return priority_stats
+
 @api.get("/tasks/search")
 def get_search(
   text: Annotated[str, Query(min_length=3)],
