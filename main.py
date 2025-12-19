@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from pydantic import BaseModel
 from enum import Enum
+from typing import Annotated
 import datetime
 
 api = FastAPI()
@@ -129,18 +130,28 @@ def delete_task(id: int):
       tasks.remove(item)
   return tasks
 
+@api.get("/tasks/search")
+def get_search(
+  text: Annotated[str, Query(min_length=3)],
+  title: Annotated[str | None, Query(description="Search by title")] = None
+):
+  filtered = [item for item in tasks if item['title'] == title] if title else tasks
+  searched = [item for item in filtered if text.lower() in item['description'].lower()]
+  return searched
+
+@api.get("/tasks/{id}")
+def get_task(id: int):
+  for item in tasks:
+    if item['id'] == id:
+      return item
+
 @api.get("/tasks")
 def get_tasks(status: TaskStatus | None = None, priority: TaskPriority | None = None, skip: int = 0, limit: int = 10):
   filtered = tasks
   if status:
-    filtered = [item for item in filtered if item['status'] == status]
+    filtered = [item for item in filtered if item['status'] == status.value]
   if priority:
-    filtered = [item for item in filtered if item['priority'] == priority]
+    filtered = [item for item in filtered if item['priority'] == priority.value]
 
-  result = [] 
-  for i, item in enumerate(filtered):
-    if skip <= i and i < skip + limit:
-      result.append(item)
-
-  return result
+  return filtered[skip:skip+limit]
 
