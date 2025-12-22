@@ -102,7 +102,23 @@ tasks = [
 ]
 
 @api.post("/tasks/create")
-def tasks_post(task: TaskCreate):
+def post_tasks(task: TaskCreate):
+  task_id = max(item['id'] for item in tasks) + 1 if tasks else 1
+
+  new_task = {
+    'id': task_id,
+    'title': task.title,
+    'description': task.description,
+    'priority': task.priority,
+    'status': task.status,
+    'created_at': str(datetime.datetime.now())
+  }
+
+  tasks.append(new_task)
+  return new_task
+
+@api.post("/tasks/quick-create")
+def post_tasks_quick(task: Annotated[TaskCreate, Body(embed = True)]):
   task_id = max(item['id'] for item in tasks) + 1 if tasks else 1
 
   new_task = {
