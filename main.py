@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Body
 from pydantic import BaseModel
 from enum import Enum
 from typing import Annotated
@@ -30,9 +30,17 @@ class Task(BaseModel):
   status: TaskStatus
   created_at: str
 
+class UpdateTask(BaseModel):
+  title: str | None = None
+  description: str | None = None
+
 class UpdateStatus(BaseModel):
   status: TaskStatus
   priority: TaskPriority
+
+class MetaData(BaseModel):
+  updated_by: str
+  reason: str
 
 tasks = [
   {
@@ -109,6 +117,14 @@ def tasks_post(task: TaskCreate):
   tasks.append(new_task)
   return new_task
 
+@api.post("/tasks/{id}/comment")
+def post_comment(id: int, comment: Annotated[str, Body()], notify: bool = False):
+  for item in tasks:
+    if item['id'] == id:
+      item['comment'] = comment
+      item['notify'] = notify
+      return item
+
 @api.put("/tasks/{id}/status")
 def put_status(id: int, update: UpdateStatus):
   for item in tasks:
@@ -123,6 +139,18 @@ def put_priority(id: int, update: UpdateStatus):
       item['priority'] = update.priority
       return item
 
+@api.put("/tasks/{id}/content")
+def put_content(id: int, content: UpdateTask, meta: MetaData):
+  for item in tasks:
+    if item['id'] == id:
+      if content.title:
+        item['title'] = content.title
+      if content.description:
+        item['description'] = content.description
+      item['updated_by'] = meta.updated_by
+      item['reason'] = meta.reason
+      return item
+    
 @api.delete("/tasks/{id}")
 def delete_task(id: int):
   for item in tasks:
