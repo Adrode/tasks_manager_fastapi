@@ -142,23 +142,41 @@ def post_comment(id: int, comment: Annotated[str, Body()], notify: bool = False)
       item['comment'] = comment
       item['notify'] = notify
       return item
-  raise HTTPException(status_code=404, detail="Item not found")
+  raise HTTPException(
+    status_code=404,
+    detail=f"Task with id {id} not found",
+    headers={"X-Error": "Task-Not-Found"}
+    )
 
 @api.put("/tasks/{id}/status")
 def put_status(id: int, update: UpdateStatus):
   for item in tasks:
+    if item['status'] == 'done' and update.status.value == 'todo':
+      raise HTTPException(status_code=400, detail=f"Cannot change status from 'done' back to '{update.priority.value}'")
+
     if item['id'] == id:
       item['status'] = update.status
       return item
-  raise HTTPException(status_code=404, detail="Item not found")
+  raise HTTPException(
+    status_code=404,
+    detail=f"Task with id {id} not found",
+    headers={"X-Error": "Task-Not-Found"}
+    )
     
 @api.put("/tasks/{id}/priority")
 def put_priority(id: int, update: UpdatePriority):
   for item in tasks:
+    if item['priority'] == 'high' and update.priority.value == 'low':
+      raise HTTPException(status_code=400, detail=f"Cannot change priority from 'high' back to '{update.priority.value}'")
+    
     if item['id'] == id:
       item['priority'] = update.priority
       return item
-  raise HTTPException(status_code=404, detail="Item not found")
+  raise HTTPException(
+    status_code=404,
+    detail=f"Task with id {id} not found",
+    headers={"X-Error": "Task-Not-Found"}
+    )
 
 @api.put("/tasks/{id}/content")
 def put_content(id: int, content: UpdateTask, meta: MetaData):
@@ -171,7 +189,11 @@ def put_content(id: int, content: UpdateTask, meta: MetaData):
       item['updated_by'] = meta.updated_by
       item['reason'] = meta.reason
       return item
-  raise HTTPException(status_code=404, detail="Item not found")
+  raise HTTPException(
+    status_code=404,
+    detail=f"Task with id {id} not found",
+    headers={"X-Error": "Task-Not-Found"}
+    )
     
 @api.delete("/tasks/{id}")
 def delete_task(id: int):
@@ -179,7 +201,11 @@ def delete_task(id: int):
     if item['id'] == id:
       tasks.remove(item)
       return {"message": f"Deleted item: no. {item['id']}. {item['title']}: {item['description']}"}
-  raise HTTPException(status_code=404, detail="Item not found")
+  raise HTTPException(
+    status_code=404,
+    detail=f"Task with id {id} not found",
+    headers={"X-Error": "Task-Not-Found"}
+    )
 
 @api.get("/tasks/stats/by-status")
 def get_status_stats():
@@ -221,7 +247,11 @@ def get_task(id: int):
   for item in tasks: 
     if item['id'] == id:
       return item
-  raise HTTPException(status_code=404, detail="Item not found")
+  raise HTTPException(
+    status_code=404,
+    detail=f"Task with id {id} not found",
+    headers={"X-Error": "Task-Not-Found"}
+    )
 
 @api.get("/tasks")
 def get_tasks(status: TaskStatus | None = None, priority: TaskPriority | None = None, skip: int = 0, limit: int = 10):
