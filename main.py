@@ -150,33 +150,47 @@ def post_comment(id: int, comment: Annotated[str, Body()], notify: bool = False)
 
 @api.put("/tasks/{id}/status")
 def put_status(id: int, update: UpdateStatus):
+  task = None
   for item in tasks:
-    if item['status'] == 'done' and update.status.value == 'todo':
-      raise HTTPException(status_code=400, detail=f"Cannot change status from 'done' back to '{update.priority.value}'")
-
     if item['id'] == id:
-      item['status'] = update.status
-      return item
-  raise HTTPException(
-    status_code=404,
-    detail=f"Task with id {id} not found",
-    headers={"X-Error": "Task-Not-Found"}
+      task = item
+      break
+  
+  if not task:
+    raise HTTPException(
+      status_code=404,
+      detail=f"Task with id {id} not found",
+      headers={"X-Error": "Task-Not-Found"}
     )
+
+  if task['status'] == 'done' and update.status.value == 'todo':
+    raise HTTPException(
+      status_code=400,
+      detail=f"Cannot change status from 'done' back to '{update.status.value}'")
+
+  task['status'] = update.status
+  return task
     
 @api.put("/tasks/{id}/priority")
 def put_priority(id: int, update: UpdatePriority):
+  task = None
   for item in tasks:
-    if item['priority'] == 'high' and update.priority.value == 'low':
-      raise HTTPException(status_code=400, detail=f"Cannot change priority from 'high' back to '{update.priority.value}'")
-    
     if item['id'] == id:
-      item['priority'] = update.priority
-      return item
-  raise HTTPException(
-    status_code=404,
-    detail=f"Task with id {id} not found",
-    headers={"X-Error": "Task-Not-Found"}
+      task = item
+      break
+
+  if not task:
+    raise HTTPException(
+      status_code=404,
+      detail=f"Task with id {id} not found",
+      headers={"X-Error": "Task-Not-Found"}
     )
+  
+  if task['priority'] == 'high' and update.priority.value == 'low':
+    raise HTTPException(status_code=400, detail=f"Cannot change priority from 'high' back to '{update.priority.value}'")
+
+  task['priority'] = update.priority
+  return task
 
 @api.put("/tasks/{id}/content")
 def put_content(id: int, content: UpdateTask, meta: MetaData):
