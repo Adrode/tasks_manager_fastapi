@@ -276,4 +276,3 @@ def get_tasks(status: TaskStatus | None = None, priority: TaskPriority | None = 
     filtered = [item for item in filtered if item['priority'] == priority.value]
 
   return filtered[skip:skip+limit]
-
