@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Query, Body, HTTPException
+from fastapi import FastAPI, Query, Body, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from enum import Enum
 from typing import Annotated
@@ -43,6 +44,10 @@ class UpdatePriority(BaseModel):
 class MetaData(BaseModel):
   updated_by: str
   reason: str
+
+class TaskNotFoundError(Exception):
+  def __init__(self, task_id: int):
+    self.task_id = task_id
 
 tasks = [
   {
@@ -103,6 +108,14 @@ tasks = [
   }
 ]
 
+@api.exception_handler(TaskNotFoundError)
+def task_not_found_exception_handler(request: Request, exception: TaskNotFoundError):
+  return JSONResponse(
+    status_code=404,
+    headers={"X-Error": "Task-Not-Found"},
+    content={'detail': f"Task id: {exception.task_id} not found"}
+  )
+
 @api.post("/tasks/create")
 def post_tasks(task: TaskCreate):
   task_id = max(item['id'] for item in tasks) + 1 if tasks else 1
@@ -142,11 +155,7 @@ def post_comment(id: int, comment: Annotated[str, Body()], notify: bool = False)
       item['comment'] = comment
       item['notify'] = notify
       return item
-  raise HTTPException(
-    status_code=404,
-    detail=f"Task with id {id} not found",
-    headers={"X-Error": "Task-Not-Found"}
-    )
+  raise TaskNotFoundError(task_id=id)
 
 @api.put("/tasks/{id}/status")
 def put_status(id: int, update: UpdateStatus):
@@ -157,11 +166,7 @@ def put_status(id: int, update: UpdateStatus):
       break
   
   if not task:
-    raise HTTPException(
-      status_code=404,
-      detail=f"Task with id {id} not found",
-      headers={"X-Error": "Task-Not-Found"}
-    )
+    raise TaskNotFoundError(task_id=id)
 
   if task['status'] == 'done' and update.status.value == 'todo':
     raise HTTPException(
@@ -180,11 +185,7 @@ def put_priority(id: int, update: UpdatePriority):
       break
 
   if not task:
-    raise HTTPException(
-      status_code=404,
-      detail=f"Task with id {id} not found",
-      headers={"X-Error": "Task-Not-Found"}
-    )
+    raise TaskNotFoundError(task_id=id)
   
   if task['priority'] == 'high' and update.priority.value == 'low':
     raise HTTPException(status_code=400, detail=f"Cannot change priority from 'high' back to '{update.priority.value}'")
@@ -203,11 +204,7 @@ def put_content(id: int, content: UpdateTask, meta: MetaData):
       item['updated_by'] = meta.updated_by
       item['reason'] = meta.reason
       return item
-  raise HTTPException(
-    status_code=404,
-    detail=f"Task with id {id} not found",
-    headers={"X-Error": "Task-Not-Found"}
-    )
+  raise TaskNotFoundError(task_id=id)
     
 @api.delete("/tasks/{id}")
 def delete_task(id: int):
@@ -215,11 +212,7 @@ def delete_task(id: int):
     if item['id'] == id:
       tasks.remove(item)
       return {"message": f"Deleted item: no. {item['id']}. {item['title']}: {item['description']}"}
-  raise HTTPException(
-    status_code=404,
-    detail=f"Task with id {id} not found",
-    headers={"X-Error": "Task-Not-Found"}
-    )
+  raise TaskNotFoundError(task_id=id)
 
 @api.get("/tasks/stats/by-status")
 def get_status_stats():
