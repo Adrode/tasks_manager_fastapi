@@ -254,11 +254,7 @@ def get_task(id: int):
   for item in tasks: 
     if item['id'] == id:
       return item
-  raise HTTPException(
-    status_code=404,
-    detail=f"Task with id {id} not found",
-    headers={"X-Error": "Task-Not-Found"}
-    )
+  raise TaskNotFoundError(task_id=id)
 
 @api.get("/tasks")
 def get_tasks(status: TaskStatus | None = None, priority: TaskPriority | None = None, skip: int = 0, limit: int = 10):
